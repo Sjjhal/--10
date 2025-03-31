@@ -1,0 +1,181 @@
+```java
+class UserLimitExceededException extends Exception {
+    public UserLimitExceededException(String message) { super(message); }
+}
+
+class InvalidUsernameException extends Exception {
+    public InvalidUsernameException(String message) { super(message); }
+}
+
+class InvalidPasswordException extends Exception {
+    public InvalidPasswordException(String message) { super(message); }
+}
+
+class UserNotFoundException extends Exception {
+    public UserNotFoundException(String message) { super(message); }
+}
+
+class AuthenticationFailedException extends Exception {
+    public AuthenticationFailedException(String message) { super(message); }
+}
+
+class BannedPasswordException extends Exception {
+    public BannedPasswordException(String message) { super(message); }
+}
+
+public class AuthenticationSystem {
+    private static final int MAX_USERS = 15;
+    private static String[] usernames = new String[MAX_USERS];
+    private static String[] passwords = new String[MAX_USERS];
+    private static String[] bannedPasswords = {"admin", "pass", "password", "qwerty", "ytrewq"};
+    private static int userCount = 0;
+
+    private static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        while (true) {
+            try {
+                System.out.println("\n1. Register user");
+                System.out.println("2. Delete user");
+                System.out.println("3. Authenticate user");
+                System.out.println("4. Add banned password");
+                System.out.println("5. Exit");
+                System.out.print("Select option: ");
+                int choice = Integer.parseInt(scanner.nextLine());
+
+                switch (choice) {
+                    case 1 -> registerUser();
+                    case 2 -> deleteUser();
+                    case 3 -> authenticateUser();
+                    case 4 -> addBannedPassword();
+                    case 5 -> System.exit(0);
+                    default -> System.out.println("Invalid option");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid number");
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private static void registerUser() throws UserLimitExceededException, InvalidUsernameException, InvalidPasswordException, BannedPasswordException {
+        if (userCount >= MAX_USERS) {
+            throw new UserLimitExceededException("Maximum users limit reached");
+        }
+
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine();
+        validateUsername(username);
+
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+        validatePassword(password);
+
+        usernames[userCount] = username;
+        passwords[userCount] = password;
+        userCount++;
+        System.out.println("User registered successfully");
+    }
+
+    private static void validateUsername(String username) throws InvalidUsernameException {
+        if (username.length() < 5) {
+            throw new InvalidUsernameException("Username must be at least 5 characters");
+        }
+        if (username.contains(" ")) {
+            throw new InvalidUsernameException("Username cannot contain spaces");
+        }
+    }
+
+    private static void validatePassword(String password) throws InvalidPasswordException, BannedPasswordException {
+        if (password.length() < 10) {
+            throw new InvalidPasswordException("Password must be at least 10 characters");
+        }
+        if (password.contains(" ")) {
+            throw new InvalidPasswordException("Password cannot contain spaces");
+        }
+
+        int digits = 0;
+        boolean hasSpecial = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isDigit(c)) digits++;
+            if (!Character.isLetterOrDigit(c)) hasSpecial = true;
+        }
+
+        if (digits < 3) {
+            throw new InvalidPasswordException("Password must contain at least 3 digits");
+        }
+        if (!hasSpecial) {
+            throw new InvalidPasswordException("Password must contain at least 1 special character");
+        }
+
+        for (String banned : bannedPasswords) {
+            if (password.toLowerCase().contains(banned)) {
+                throw new BannedPasswordException("Password contains banned word: " + banned);
+            }
+        }
+    }
+
+    private static void deleteUser() throws UserNotFoundException {
+        System.out.print("Enter username to delete: ");
+        String username = scanner.nextLine();
+
+        int index = -1;
+        for (int i = 0; i < userCount; i++) {
+            if (usernames[i].equals(username)) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index == -1) {
+            throw new UserNotFoundException("User not found");
+        }
+
+        for (int i = index; i < userCount - 1; i++) {
+            usernames[i] = usernames[i + 1];
+            passwords[i] = passwords[i + 1];
+        }
+        userCount--;
+        System.out.println("User deleted successfully");
+    }
+
+    private static void authenticateUser() throws AuthenticationFailedException, UserNotFoundException {
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine();
+
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+
+        boolean found = false;
+        for (int i = 0; i < userCount; i++) {
+            if (usernames[i].equals(username)) {
+                found = true;
+                if (passwords[i].equals(password)) {
+                    System.out.println("Authentication successful");
+                    return;
+                } else {
+                    throw new AuthenticationFailedException("Invalid password");
+                }
+            }
+        }
+
+        if (!found) {
+            throw new UserNotFoundException("User not found");
+        }
+    }
+
+    private static void addBannedPassword() {
+        System.out.print("Enter password to ban: ");
+        String newBanned = scanner.nextLine();
+
+        String[] newBannedPasswords = new String[bannedPasswords.length + 1];
+        System.arraycopy(bannedPasswords, 0, newBannedPasswords, 0, bannedPasswords.length);
+        newBannedPasswords[bannedPasswords.length] = newBanned;
+        bannedPasswords = newBannedPasswords;
+
+        System.out.println("Password banned successfully");
+    }
+}
+```
